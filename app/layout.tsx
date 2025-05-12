@@ -12,12 +12,15 @@ import siteMetadata from '@/data/siteMetadata'
 import { ThemeProviders } from './theme-providers'
 import { Metadata } from 'next'
 
+// Google 字体设置 - Space Grotesk
+// 配置字体加载和CSS变量，使其可在整个应用中使用
 const space_grotesk = Space_Grotesk({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-space-grotesk',
 })
 
+// 定义网站元数据，影响SEO和社交媒体分享效果
 export const metadata: Metadata = {
   metadataBase: new URL(siteMetadata.siteUrl),
   title: {
@@ -58,6 +61,7 @@ export const metadata: Metadata = {
   },
 }
 
+// 根布局组件 - 应用于整个应用的所有页面
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const basePath = process.env.BASE_PATH || ''
 
@@ -67,6 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${space_grotesk.variable} scroll-smooth`}
       suppressHydrationWarning
     >
+      {/* 图标和网站身份设置 */}
       <link
         rel="apple-touch-icon"
         sizes="76x76"
@@ -91,9 +96,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         color="#5bbad5"
       />
       <meta name="msapplication-TileColor" content="#000000" />
+      {/* 主题颜色设置 - 根据系统偏好 */}
       <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fff" />
       <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000" />
       <link rel="alternate" type="application/rss+xml" href={`${basePath}/feed.xml`} />
+      {/* 主体内容 */}
       <body className="bg-white pl-[calc(100vw-100%)] text-black antialiased dark:bg-gray-950 dark:text-white">
         <ThemeProviders>
           <Analytics analyticsConfig={siteMetadata.analytics as AnalyticsConfig} />

@@ -3,17 +3,17 @@ const siteMetadata = {
   title: 'Next.js Starter Blog',
   author: 'Tails Azimuth',
   headerTitle: 'TailwindBlog',
-  description: 'A blog created with Next.js and Tailwind.css',
+  description: 'A blog created with Next.js',
   language: 'en-us',
   theme: 'system', // system, dark or light
-  siteUrl: 'https://tailwind-nextjs-starter-blog.vercel.app',
-  siteRepo: 'https://github.com/timlrx/tailwind-nextjs-starter-blog',
-  siteLogo: `${process.env.BASE_PATH || ''}/static/images/logo.png`,
-  socialBanner: `${process.env.BASE_PATH || ''}/static/images/twitter-card.png`,
-  mastodon: 'https://mastodon.social/@mastodonuser',
-  email: 'address@yoursite.com',
-  github: 'https://github.com',
-  x: 'https://twitter.com/x',
+  siteUrl: 'https://tailwind-nextjs-starter-blog.vercel.app' /* 网站地址 */,
+  siteRepo: 'https://github.com/timlrx/tailwind-nextjs-starter-blog' /* 网站仓库地址 */,
+  siteLogo: `${process.env.BASE_PATH || ''}/static/images/logo.png` /* 网站logo */,
+  socialBanner: `${process.env.BASE_PATH || ''}/static/images/twitter-card.png` /* 社交banner */,
+  mastodon: 'https://mastodon.social/@mastodonuser' /* 马斯特顿 */,
+  email: '748056190@qq.com' /* 邮箱 */,
+  github: 'https://github.com/sunstflower' /* 仓库地址 */,
+  x: 'https://twitter.com/x' /* 推特 */,
   // twitter: 'https://twitter.com/Twitter',
   facebook: 'https://facebook.com',
   youtube: 'https://youtube.com',
@@ -52,7 +52,7 @@ const siteMetadata = {
   newsletter: {
     // supports mailchimp, buttondown, convertkit, klaviyo, revue, emailoctopus, beehive
     // Please add your .env file and modify it according to your selection
-    provider: 'buttondown',
+    // provider: 'buttondown',
   },
   comments: {
     // If you want to use an analytics provider you have to add it to the
@@ -63,10 +63,10 @@ const siteMetadata = {
     giscusConfig: {
       // Visit the link below, and follow the steps in the 'configuration' section
       // https://giscus.app/
-      repo: process.env.NEXT_PUBLIC_GISCUS_REPO,
-      repositoryId: process.env.NEXT_PUBLIC_GISCUS_REPOSITORY_ID,
-      category: process.env.NEXT_PUBLIC_GISCUS_CATEGORY,
-      categoryId: process.env.NEXT_PUBLIC_GISCUS_CATEGORY_ID,
+      repo: process.env.NEXT_PUBLIC_GISCUS_REPO /* 仓库地址 */,
+      repositoryId: process.env.NEXT_PUBLIC_GISCUS_REPOSITORY_ID /* 仓库id */,
+      category: process.env.NEXT_PUBLIC_GISCUS_CATEGORY /* 分类 */,
+      categoryId: process.env.NEXT_PUBLIC_GISCUS_CATEGORY_ID /* 分类id */,
       mapping: 'pathname', // supported options: pathname, url, title
       reactions: '1', // Emoji reactions: 1 = enable / 0 = disable
       // Send discussion metadata periodically to the parent window: 1 = enable / 0 = disable

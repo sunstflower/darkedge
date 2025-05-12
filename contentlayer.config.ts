@@ -1,30 +1,30 @@
 import { defineDocumentType, ComputedFields, makeSource } from 'contentlayer2/source-files'
-import { writeFileSync } from 'fs'
-import readingTime from 'reading-time'
-import { slug } from 'github-slugger'
-import path from 'path'
-import { fromHtmlIsomorphic } from 'hast-util-from-html-isomorphic'
+import { writeFileSync } from 'fs' /* 写入文件 */
+import readingTime from 'reading-time' /* 阅读时间 */
+import { slug } from 'github-slugger' /* 生成slug */
+import path from 'path' /* 路径 */
+import { fromHtmlIsomorphic } from 'hast-util-from-html-isomorphic' /* 从html生成hast */
 // Remark packages
-import remarkGfm from 'remark-gfm'
-import remarkMath from 'remark-math'
-import { remarkAlert } from 'remark-github-blockquote-alert'
+import remarkGfm from 'remark-gfm' /* 处理gfm */
+import remarkMath from 'remark-math' /* 处理数学公式 */
+import { remarkAlert } from 'remark-github-blockquote-alert' /* 处理github块引用 */
 import {
   remarkExtractFrontmatter,
   remarkCodeTitles,
   remarkImgToJsx,
   extractTocHeadings,
-} from 'pliny/mdx-plugins/index.js'
+} from 'pliny/mdx-plugins/index.js' /* pliny的mdx插件 */
 // Rehype packages
-import rehypeSlug from 'rehype-slug'
-import rehypeAutolinkHeadings from 'rehype-autolink-headings'
-import rehypeKatex from 'rehype-katex'
-import rehypeKatexNoTranslate from 'rehype-katex-notranslate'
-import rehypeCitation from 'rehype-citation'
-import rehypePrismPlus from 'rehype-prism-plus'
-import rehypePresetMinify from 'rehype-preset-minify'
-import siteMetadata from './data/siteMetadata'
-import { allCoreContent, sortPosts } from 'pliny/utils/contentlayer.js'
-import prettier from 'prettier'
+import rehypeSlug from 'rehype-slug' /* 处理slug */
+import rehypeAutolinkHeadings from 'rehype-autolink-headings' /* 处理自动链接 */
+import rehypeKatex from 'rehype-katex' /* 处理katex */
+import rehypeKatexNoTranslate from 'rehype-katex-notranslate' /* 处理katex不翻译 */
+import rehypeCitation from 'rehype-citation' /* 处理引用 */
+import rehypePrismPlus from 'rehype-prism-plus' /* 处理prism */
+import rehypePresetMinify from 'rehype-preset-minify' /* 处理压缩 */
+import siteMetadata from './data/siteMetadata' /* 站点元数据 */
+import { allCoreContent, sortPosts } from 'pliny/utils/contentlayer.js' /* pliny的工具函数 */
+import prettier from 'prettier' /* 格式化 */
 
 const root = process.cwd()
 const isProduction = process.env.NODE_ENV === 'production'

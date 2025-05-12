@@ -4,7 +4,7 @@ import siteMetadata from '@/data/siteMetadata'
 import { formatDate } from 'pliny/utils/formatDate'
 import NewsletterForm from 'pliny/ui/NewsletterForm'
 
-const MAX_DISPLAY = 5
+const MAX_DISPLAY = 5 /* 控制首页显示的最大文章数 */
 
 export default function Home({ posts }) {
   return (
@@ -26,13 +26,17 @@ export default function Home({ posts }) {
               <li key={slug} className="py-12">
                 <article>
                   <div className="space-y-2 xl:grid xl:grid-cols-4 xl:items-baseline xl:space-y-0">
+                    {/* 日期信息 */}
                     <dl>
                       <dt className="sr-only">Published on</dt>
                       <dd className="text-base leading-6 font-medium text-gray-500 dark:text-gray-400">
                         <time dateTime={date}>{formatDate(date, siteMetadata.locale)}</time>
                       </dd>
                     </dl>
+
+                    {/* 文章主体 */}
                     <div className="space-y-5 xl:col-span-3">
+                      {/* 标题与标签 */}
                       <div className="space-y-6">
                         <div>
                           <h2 className="text-2xl leading-8 font-bold tracking-tight">
@@ -49,15 +53,18 @@ export default function Home({ posts }) {
                             ))}
                           </div>
                         </div>
+
+                        {/* 摘要 */}
                         <div className="prose max-w-none text-gray-500 dark:text-gray-400">
                           {summary}
                         </div>
                       </div>
+
+                      {/* 阅读更多链接 */}
                       <div className="text-base leading-6 font-medium">
                         <Link
                           href={`/blog/${slug}`}
                           className="text-primary-500 hover:text-primary-600 dark:hover:text-primary-400"
-                          aria-label={`Read more: "${title}"`}
                         >
                           Read more &rarr;
                         </Link>

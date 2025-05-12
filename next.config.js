@@ -1,8 +1,10 @@
-const { withContentlayer } = require('next-contentlayer2')
+import { withContentlayer } from 'next-contentlayer2'
 
-const withBundleAnalyzer = require('@next/bundle-analyzer')({
+import withBundleAnalyzer from '@next/bundle-analyzer'
+const analyzerOptions = {
   enabled: process.env.ANALYZE === 'true',
-})
+}
+const withAnalyzer = withBundleAnalyzer(analyzerOptions)
 
 // You might need to insert additional domains in script-src if you are using external services
 const ContentSecurityPolicy = `
@@ -64,13 +66,13 @@ const unoptimized = process.env.UNOPTIMIZED ? true : undefined
 module.exports = () => {
   const plugins = [withContentlayer, withBundleAnalyzer]
   return plugins.reduce((acc, next) => next(acc), {
-    output,
-    basePath,
-    reactStrictMode: true,
-    trailingSlash: false,
-    pageExtensions: ['ts', 'tsx', 'js', 'jsx', 'md', 'mdx'],
+    output, // 指定输出模式，可以是 'export' 或 undefined
+    basePath, // 指定基础路径，可以是 undefined
+    reactStrictMode: true, // 启用 React 严格模式
+    trailingSlash: false, // 启用尾随斜杠
+    pageExtensions: ['ts', 'tsx', 'js', 'jsx', 'md', 'mdx'], // 指定页面扩展名
     eslint: {
-      dirs: ['app', 'components', 'layouts', 'scripts'],
+      dirs: ['app', 'components', 'layouts', 'scripts'], // 指定 ESLint 检查的目录
     },
     images: {
       remotePatterns: [
@@ -79,7 +81,7 @@ module.exports = () => {
           hostname: 'picsum.photos',
         },
       ],
-      unoptimized,
+      unoptimized, // 指定是否优化图片
     },
     async headers() {
       return [
