@@ -3,22 +3,28 @@ name: Convert Issue to Blog Post
 on:
   issues:
     types: [opened, edited, labeled, unlabeled, closed, reopened]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to process'
+        required: true
+        type: number
 
 jobs:
   convert-issue:
-    # 只处理带有 'publish' 标签的 Issues
-    if: contains(github.event.issue.labels.*.name, 'publish')
+    # 只处理带有 'publish' 标签的 Issues 或手动触发
+    if: |
+      (github.event_name == 'workflow_dispatch') || 
+      (github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'publish'))
     runs-on: ubuntu-latest
     permissions:
       contents: write  # 需要写入权限来提交文件
-      issues: read     # 需要读取 Issues 权限
+      issues: write    # 需要写入 Issues 权限以添加评论
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: main  # 确保检出主分支
-      
+        
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -27,6 +33,50 @@ jobs:
       
       - name: Install dependencies
         run: npm ci
+      
+      - name: Get issue number
+        id: get-issue
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "ISSUE_NUMBER=${{ github.event.inputs.issue_number }}" >> $GITHUB_ENV
+          else
+            echo "ISSUE_NUMBER=${{ github.event.issue.number }}" >> $GITHUB_ENV
+          fi
+      
+      - name: Get issue details
+        id: get-issue-details
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issueNumber = process.env.ISSUE_NUMBER;
+            
+            try {
+              const { data: issue } = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber
+              });
+              
+              const issueData = {
+                number: issue.number,
+                title: issue.title,
+                body: issue.body || '',
+                createdAt: issue.created_at,
+                updatedAt: issue.updated_at,
+                labels: issue.labels.map(label => label.name),
+                state: issue.state
+              };
+              
+              // 将数据保存到环境变量
+              process.env.ISSUE_DATA = JSON.stringify(issueData);
+              console.log(`Processing Issue #${issueNumber}: ${issue.title}`);
+              
+              return issueData;
+            } catch (error) {
+              console.error(`Error getting issue #${issueNumber}:`, error);
+              core.setFailed(`无法获取 Issue #${issueNumber} 的详细信息`);
+            }
       
       - name: Process Issue to MDX
         id: process-issue
@@ -40,16 +90,14 @@ jobs:
             const yaml = require('js-yaml');
             
             // 获取 Issue 信息
-            const issue = context.payload.issue;
-            const issueNumber = issue.number;
-            const title = issue.title;
-            const body = issue.body || '';
-            const createdAt = issue.created_at;
-            const updatedAt = issue.updated_at;
-            const labels = issue.labels.map(label => label.name).filter(name => name !== 'publish');
-            const isDraft = issue.state === 'closed';
-            
-            console.log(`Processing Issue #${issueNumber}: ${title}`);
+            const issueData = JSON.parse(process.env.ISSUE_DATA);
+            const issueNumber = issueData.number;
+            const title = issueData.title;
+            const body = issueData.body;
+            const createdAt = issueData.createdAt;
+            const updatedAt = issueData.updatedAt;
+            const labels = issueData.labels.filter(name => name !== 'publish');
+            const isDraft = issueData.state === 'closed';
             
             // 提取 frontmatter，如果有的话
             let frontmatter = {};
@@ -75,6 +123,11 @@ jobs:
             frontmatter.draft = frontmatter.draft !== undefined ? frontmatter.draft : isDraft;
             frontmatter.issueNumber = issueNumber; // 添加 Issue 编号以便跟踪
             
+            // 确保 authors 字段存在
+            if (!frontmatter.authors) {
+              frontmatter.authors = ['default'];
+            }
+            
             // 如果没有设置 summary，尝试从内容中提取
             if (!frontmatter.summary) {
               // 去除 Markdown 标记，获取第一段作为摘要
@@ -87,11 +140,6 @@ jobs:
               frontmatter.summary = firstParagraph.length > 160 
                 ? firstParagraph.substring(0, 157) + '...' 
                 : firstParagraph;
-            }
-            
-            // 如果没有设置 authors，使用 default
-            if (!frontmatter.authors) {
-              frontmatter.authors = ['default'];
             }
             
             // 生成 slug (用于文件名和 URL)
@@ -161,11 +209,9 @@ jobs:
             // 处理图片
             content = await processImages(content);
             
-            // 准备 MDX 内容
-            const mdxContent = `---
-${yaml.dump(frontmatter)}---
-
-${content}`;
+            // 准备 MDX 内容 - 避免YAML解析错误，直接拼接字符串
+            const frontmatterStr = yaml.dump(frontmatter).trim();
+            const mdxContent = `---\n${frontmatterStr}\n---\n\n${content}`;
             
             // 保存文件
             const blogDir = path.join('data', 'blog');
@@ -177,15 +223,17 @@ ${content}`;
             fs.writeFileSync(filePath, mdxContent);
             console.log(`Saved MDX file to: ${filePath}`);
             
-            // 返回文件路径，供后续步骤使用
-            return { filePath, slug };
+            // 输出结果供后续步骤使用
+            core.setOutput('slug', slug);
+            core.setOutput('filePath', filePath);
+            return { slug, filePath };
       
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/blog
-          git add public/static/images/issues
+          git add public/static/images/issues || true
           
           # 只在有更改时提交
           if git diff --staged --quiet; then
@@ -193,7 +241,7 @@ ${content}`;
             exit 0
           fi
           
-          git commit -m "Blog post from issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}"
+          git commit -m "Blog post from issue #${{ env.ISSUE_NUMBER }}: $(echo '${{ steps.get-issue-details.outputs.result }}' | jq -r '.title')"
           git push
       
       - name: Add comment to Issue
@@ -202,13 +250,67 @@ ${content}`;
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { slug } = steps['process-issue'].outputs;
-            
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.issue.number,
-              body: `✅ 博客文章已成功创建！\n\n`+
-                    `文章将在构建完成后可在以下链接访问:\n`+
-                    `${process.env.VERCEL_URL || 'your-site.com'}/blog/${slug}`
-            });
+            try {
+              const fs = require('fs');
+              const path = require('path');
+              
+              // 获取process-issue步骤的输出
+              const stepOutput = process.env.GITHUB_OUTPUT || '';
+              let slug = '';
+              
+              // 尝试从输出文件中解析slug
+              try {
+                const outputLines = fs.readFileSync(stepOutput, 'utf8').split('\n');
+                for (const line of outputLines) {
+                  if (line.startsWith('process-issue_slug=')) {
+                    slug = line.substring('process-issue_slug='.length);
+                    break;
+                  }
+                }
+              } catch (e) {
+                console.error('Error reading output file:', e);
+              }
+              
+              // 如果找不到slug，尝试从result中获取
+              if (!slug && context.payload.outputs && context.payload.outputs['process-issue']) {
+                const result = JSON.parse(context.payload.outputs['process-issue']);
+                slug = result.slug;
+              }
+              
+              if (!slug) {
+                console.log('Could not determine slug. Using issue number instead.');
+                slug = process.env.ISSUE_NUMBER;
+              }
+              
+              // 从siteMetadata中获取网站URL
+              let siteUrl = 'https://your-site.com';
+              try {
+                const siteMetadataPath = path.join(process.cwd(), 'data', 'siteMetadata.js');
+                const siteMetadataContent = fs.readFileSync(siteMetadataPath, 'utf8');
+                const siteUrlMatch = siteMetadataContent.match(/siteUrl:\s*['"]([^'"]+)['"]/);
+                if (siteUrlMatch && siteUrlMatch[1]) {
+                  siteUrl = siteUrlMatch[1];
+                }
+              } catch (error) {
+                console.error('Error reading siteMetadata.js:', error);
+              }
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: parseInt(process.env.ISSUE_NUMBER),
+                body: `✅ 博客文章已成功创建！\n\n`+
+                      `文章将在构建完成后可在以下链接访问:\n`+
+                      `${siteUrl}/blog/${slug}`
+              });
+            } catch (error) {
+              console.error('Error adding comment to issue:', error);
+            }
+      
+      - name: Trigger Vercel Deployment
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        if: success() && env.VERCEL_DEPLOY_HOOK_URL != ''
+        run: |
+          echo "Triggering Vercel deployment..."
+          curl -X POST ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
