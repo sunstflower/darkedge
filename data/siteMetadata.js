@@ -1,10 +1,10 @@
 /** @type {import("pliny/config").PlinyConfig } */
 const siteMetadata = {
   title: 'Next.js Starter Blog',
-  author: 'Tails Azimuth',
-  headerTitle: 'TailwindBlog',
-  description: 'A blog created with Next.js',
-  language: 'en-us',
+  author: 'sunsetflower (from Tails Azimuth)', // 作者
+  headerTitle: 'TailwindBlog', // 头部标题
+  description: 'A blog created with Next.js', // 描述
+  language: 'en-us', // 语言
   theme: 'system', // system, dark or light
   siteUrl: 'https://tailwind-nextjs-starter-blog.vercel.app' /* 网站地址 */,
   siteRepo: 'https://github.com/timlrx/tailwind-nextjs-starter-blog' /* 网站仓库地址 */,
