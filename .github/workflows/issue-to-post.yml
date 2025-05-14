@@ -22,13 +22,13 @@ jobs:
       (github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'publish'))
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # 需要写入权限来提交文件
-      issues: write    # 需要写入 Issues 权限以添加评论
-    
+      contents: write # 需要写入权限来提交文件
+      issues: write # 需要写入 Issues 权限以添加评论
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        
+
       - name: Get issue details
         id: get-issue
         uses: actions/github-script@v7
@@ -36,7 +36,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const issueNumber = ${{ github.event.inputs.issue_number || github.event.issue.number }};
-            
+
             try {
               const { data: issue } = await github.rest.issues.get({
                 owner: context.repo.owner,
@@ -112,19 +112,19 @@ jobs:
               console.error(`Error processing issue #${issueNumber}:`, error);
               core.setFailed(`Failed to process issue #${issueNumber}`);
             }
-      
+
       - name: Download issue images
         if: success()
         run: |
           # 创建目录
           mkdir -p public/static/images/issues/${{ env.ISSUE_NUMBER }}
-          
+
           # 使用正则表达式从内容中提取图片链接并下载
           OUTPUT=$(echo '${{ steps.get-issue.outputs.result }}' | jq -r '.content')
-          
+
           # 提取并下载GitHub用户上传的图片
           IMAGES=$(echo "$OUTPUT" | grep -o -E '!\[[^\]]*\]\(https://user-images\.githubusercontent\.com/[^)]+\)')
-          
+
           for IMG in $IMAGES; do
             URL=$(echo $IMG | grep -o -E 'https://user-images\.githubusercontent\.com/[^)]+')
             FILENAME=$(basename $URL | cut -d '?' -f 1)
@@ -135,7 +135,7 @@ jobs:
             CONTENT=$(echo "$OUTPUT" | sed "s|$URL|/static/images/issues/${{ env.ISSUE_NUMBER }}/$FILENAME|g")
             OUTPUT="$CONTENT"
           done
-      
+
       - name: Save MDX file
         run: |
           mkdir -p data/blog
@@ -143,22 +143,22 @@ jobs:
           CONTENT=$(echo '${{ steps.get-issue.outputs.result }}' | jq -r '.content')
           echo "$CONTENT" > data/blog/$SLUG.mdx
           echo "Created file: data/blog/$SLUG.mdx"
-      
+
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/blog
           git add public/static/images/issues || true
-          
+
           if git diff --staged --quiet; then
             echo "No changes to commit"
             exit 0
           fi
-          
+
           git commit -m "Blog post from issue #${{ env.ISSUE_NUMBER }}: ${{ env.ISSUE_TITLE }}"
           git push
-      
+
       - name: Add comment to Issue
         if: success()
         uses: actions/github-script@v7
@@ -168,7 +168,7 @@ jobs:
             const fs = require('fs');
             const path = require('path');
             const result = JSON.parse('${{ steps.get-issue.outputs.result }}');
-            
+
             // 从siteMetadata中获取网站URL
             let siteUrl = 'https://your-site.com';
             try {
@@ -181,7 +181,7 @@ jobs:
             } catch (error) {
               console.error('Error reading siteMetadata.js:', error);
             }
-            
+
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -190,7 +190,7 @@ jobs:
                     `文章将在构建完成后可在以下链接访问:\n`+
                     `${siteUrl}/blog/${result.slug}`
             });
-      
+
       - name: Trigger Vercel Deployment
         env:
           VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
