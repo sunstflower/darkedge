@@ -1,6 +1,6 @@
 // next.config.js
-import { withContentlayer } from 'next-contentlayer2'
-import withBundleAnalyzer from '@next/bundle-analyzer'
+const withContentlayer = require('next-contentlayer2').withContentlayer
+const withBundleAnalyzer = require('@next/bundle-analyzer')
 
 const analyzerOptions = {
   enabled: process.env.ANALYZE === 'true',
