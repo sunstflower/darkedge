@@ -1,6 +1,8 @@
 // next.config.js
-const withContentlayer = require('next-contentlayer2').withContentlayer
-const withBundleAnalyzer = require('@next/bundle-analyzer')
+const { withContentlayer } = require('next-contentlayer2')
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+})
 
 const analyzerOptions = {
   enabled: process.env.ANALYZE === 'true',
@@ -61,7 +63,7 @@ const basePath = process.env.BASE_PATH || undefined
 const unoptimized = process.env.UNOPTIMIZED ? true : undefined
 
 // 定义 Next.js 配置
-const nextConfig = {
+const config = {
   output,
   basePath,
   reactStrictMode: true,
@@ -97,5 +99,7 @@ const nextConfig = {
   },
 }
 
-// 使用 ESM 导出配置，应用所有插件
-export default withContentlayer(withBundleAnalyzer(analyzerOptions)(nextConfig))
+module.exports = () => {
+  const plugins = [withContentlayer, withBundleAnalyzer]
+  return plugins.reduce((acc, next) => next(acc), config)
+}
